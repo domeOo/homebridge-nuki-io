@@ -1,7 +1,7 @@
 import { NukiBridgeApi } from './nuki-bridge-api';
 import bent from 'bent';
 import path from 'path';
-import * as fs from "fs";
+import * as fs from 'fs';
 
 const getJSON = bent('json');
 

@@ -5,40 +5,15 @@ import {
     CharacteristicValue,
     Logging,
     PlatformAccessory,
-    Service
+    Service,
 } from 'homebridge';
 import { AbstractNukIDevice } from './abstract-nuki-device';
-import { NukiBridgeApi } from './nuki-bridge-api';
-import { NukiDeviceTypes } from './nuki-device-types';
+import { NukiBridgeApi } from '../api/nuki-bridge-api';
+import { NukiDeviceTypes } from '../api/nuki-device-types';
+import { NukiLockAction } from '../api/nuki-lock-action';
+import { NukiLockState } from '../api/nuki-lock-state';
+import { NukiDoorSensorState } from '../api/nuki-door-sensor-state';
 
-enum DoorsensorState {
-    DEACTIVATED = 1,
-    DOOR_CLOSED = 2,
-    DOOR_OPENED = 3,
-    DOOR_STATE_UNKNOWN = 4,
-    CALIBRATING = 5
-}
-
-enum LockState {
-    UNCALIBRATED = 0,
-    LOCKED = 1,
-    UNLOCKING = 2,
-    UNLOCKED = 3,
-    LOCKING = 4,
-    UNLATCHED = 5,
-    UNLOCKED_LOCK_AND_GO = 6,
-    UNLATCHING = 7,
-    MOTOR_BLOCKED = 8,
-    UNDEFINED = 255
-}
-
-export enum LockAction {
-    UNLOCK = 1,
-    LOCK = 2,
-    UNLATCH = 3,
-    LOCK_AND_GO = 4,
-    LOCK_AND_GO_WITH_UNLATCH = 5
-}
 
 export class NukiSmartLockDevice extends AbstractNukIDevice {
 
@@ -52,13 +27,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
 
     private readonly informationService: Service;
 
-    private isBatteryLow = false;
-
-    private isDoorLocked = false;
-
-    private isDoorOpen = false;
-
-    private isDoorLatched = false;
+    private _timeout: NodeJS.Timeout | undefined;
 
     constructor(api: API, log: Logging, nukiApi: NukiBridgeApi, accessory: PlatformAccessory) {
         super(api, log, nukiApi, NukiDeviceTypes.SmartLock, accessory);
@@ -69,11 +38,11 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
 
         this.contactSensorService = this._accessory.getService(api.hap.Service.ContactSensor);
 
-        this.unlatchService = this.getOrAddService(api.hap.Service.LockMechanism, 'Lock Door');
+        this.unlatchService = this.getOrAddService(api.hap.Service.LockMechanism, 'Unlatch Door');
         this.unlatchService.getCharacteristic(api.hap.Characteristic.LockTargetState)
             .on('set', this.handleLockTargetStateSet.bind(this));
 
-        this.lockService = this.getOrAddService(api.hap.Service.Switch, 'Unlatch Door');
+        this.lockService = this.getOrAddService(api.hap.Service.Switch, 'Lock Door');
         this.lockService.getCharacteristic(api.hap.Characteristic.On)
             .on('set', this.handleOnSet.bind(this));
 
@@ -88,41 +57,52 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
     }
 
     handleLockTargetStateSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-        console.log(value);
-        let action: LockAction;
-        if (value) {
-            action = LockAction.UNLATCH;
-        } else {
-            return callback(null, value);
+        if (value !== this._api.hap.Characteristic.LockCurrentState.UNSECURED) {
+            this.unlatchService.updateCharacteristic(this._api.hap.Characteristic.LockCurrentState, value);
+            return callback(null);
         }
 
-        this._nukiApi.lockAction(this.id, NukiDeviceTypes.SmartLock, action).then(() => {
+        this._nukiApi.lockAction(this.id, NukiDeviceTypes.SmartLock, NukiLockAction.UNLATCH).then(() => {
+            if (this._timeout) {
+                clearTimeout(this._timeout);
+            }
+
+            this._timeout = setTimeout(() => {
+                this.unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockCurrentState,
+                    this._api.hap.Characteristic.LockCurrentState.UNSECURED,
+                );
+                this.unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockTargetState,
+                    this._api.hap.Characteristic.LockTargetState.UNSECURED,
+                );
+            }, 3000);
+
             callback(null);
         }).catch((err) => {
-            console.log(err);
+            this._log.error(err);
             callback(err);
         });
     }
 
     handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-        console.log(value);
-        let action: LockAction;
+        let action: NukiLockAction;
         if (value) {
-            action = LockAction.LOCK;
+            action = NukiLockAction.LOCK;
         } else {
-            action = LockAction.UNLOCK;
+            action = NukiLockAction.UNLOCK;
         }
 
         this._nukiApi.lockAction(this.id, NukiDeviceTypes.SmartLock, action).then(() => {
             callback(null);
         }).catch((err) => {
-            console.log(err);
+            this._log.error(err);
             callback(err);
         });
     }
 
     // eslint-disable-next-line max-len
-    update(state: { mode: number, state: LockState, stateName: string, batteryCritical: boolean, doorsensorState: DoorsensorState, doorsensorStateName: string }) {
+    update(state: { mode: number, state: NukiLockState, stateName: string, batteryCritical: boolean, doorsensorState: NukiDoorSensorState, doorsensorStateName: string }) {
         console.log(state);
 
         let unlatchCurrentState = this.unlatchService.getCharacteristic(this._api.hap.Characteristic.LockCurrentState).value;
@@ -130,51 +110,51 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         let lockOn = this.lockService.getCharacteristic(this._api.hap.Characteristic.On).value;
 
         switch (state.state) {
-            case LockState.LOCKED:
+            case NukiLockState.LOCKED:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.SECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.SECURED;
                 lockOn = true;
                 break;
 
-            case LockState.LOCKING:
+            case NukiLockState.LOCKING:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.UNSECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.SECURED;
                 break;
 
-            case LockState.MOTOR_BLOCKED:
+            case NukiLockState.MOTOR_BLOCKED:
                 unlatchTargetState = this._api.hap.Characteristic.LockCurrentState.JAMMED;
                 break;
 
-            case LockState.UNCALIBRATED:
+            case NukiLockState.UNCALIBRATED:
                 unlatchTargetState = this._api.hap.Characteristic.LockCurrentState.JAMMED;
                 break;
 
-            case LockState.UNDEFINED:
+            case NukiLockState.UNDEFINED:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.UNKNOWN;
                 unlatchTargetState = this._api.hap.Characteristic.LockCurrentState.UNKNOWN;
                 break;
 
-            case LockState.UNLATCHED:
+            case NukiLockState.UNLATCHED:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.UNSECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.UNSECURED;
                 break;
 
-            case LockState.UNLATCHING:
+            case NukiLockState.UNLATCHING:
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.UNSECURED;
                 break;
 
-            case LockState.UNLOCKED:
+            case NukiLockState.UNLOCKED:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.UNSECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.UNSECURED;
                 lockOn = false;
                 break;
 
-            case LockState.UNLOCKED_LOCK_AND_GO:
+            case NukiLockState.UNLOCKED_LOCK_AND_GO:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.UNSECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.SECURED;
                 break;
 
-            case LockState.UNLOCKING:
+            case NukiLockState.UNLOCKING:
                 unlatchCurrentState = this._api.hap.Characteristic.LockCurrentState.SECURED;
                 unlatchTargetState = this._api.hap.Characteristic.LockTargetState.UNSECURED;
                 break;
@@ -184,7 +164,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         this.unlatchService.updateCharacteristic(this._api.hap.Characteristic.LockTargetState, unlatchTargetState);
         this.lockService.updateCharacteristic(this._api.hap.Characteristic.On, lockOn as any);
 
-        if (state.doorsensorState === DoorsensorState.DEACTIVATED) {
+        if (state.doorsensorState === NukiDoorSensorState.DEACTIVATED) {
             if (this.contactSensorService) {
                 this._accessory.removeService(this.contactSensorService);
                 this.contactSensorService = undefined;
@@ -196,20 +176,29 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
                 this.contactSensorService.getCharacteristic(this._api.hap.Characteristic.ContactSensorState);
             }
 
-            const isFault = state.doorsensorState === DoorsensorState.CALIBRATING
-                || state.doorsensorState === DoorsensorState.DOOR_STATE_UNKNOWN;
+            const isFault = state.doorsensorState === NukiDoorSensorState.CALIBRATING
+                || state.doorsensorState === NukiDoorSensorState.DOOR_STATE_UNKNOWN;
 
             if (isFault) {
-                this.contactSensorService.updateCharacteristic(this._api.hap.Characteristic.StatusFault, this._api.hap.Characteristic.StatusFault.GENERAL_FAULT);
+                this.contactSensorService.updateCharacteristic(
+                    this._api.hap.Characteristic.StatusFault,
+                    this._api.hap.Characteristic.StatusFault.GENERAL_FAULT,
+                );
             } else {
                 let contactSensorState;
-                if (state.doorsensorState === DoorsensorState.DOOR_OPENED) {
+                if (state.doorsensorState === NukiDoorSensorState.DOOR_OPENED) {
                     contactSensorState = this._api.hap.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
                 } else {
                     contactSensorState = this._api.hap.Characteristic.ContactSensorState.CONTACT_DETECTED;
                 }
-                this.contactSensorService.updateCharacteristic(this._api.hap.Characteristic.ContactSensorState, contactSensorState);
-                this.contactSensorService.updateCharacteristic(this._api.hap.Characteristic.StatusFault, this._api.hap.Characteristic.StatusFault.NO_FAULT);
+                this.contactSensorService.updateCharacteristic(
+                    this._api.hap.Characteristic.ContactSensorState,
+                    contactSensorState,
+                );
+                this.contactSensorService.updateCharacteristic(
+                    this._api.hap.Characteristic.StatusFault,
+                    this._api.hap.Characteristic.StatusFault.NO_FAULT,
+                );
             }
         }
 

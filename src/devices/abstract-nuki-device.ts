@@ -1,7 +1,7 @@
 import { AbstractAccessory } from './abstract-accessory';
 import { API, Logging, PlatformAccessory } from 'homebridge';
-import { NukiBridgeApi } from './nuki-bridge-api';
-import { NukiDeviceTypes } from './nuki-device-types';
+import { NukiBridgeApi } from '../api/nuki-bridge-api';
+import { NukiDeviceTypes } from '../api/nuki-device-types';
 
 export abstract class AbstractNukIDevice extends AbstractAccessory {
 

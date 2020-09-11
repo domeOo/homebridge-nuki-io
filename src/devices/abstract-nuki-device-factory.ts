@@ -1,8 +1,9 @@
-import { API, Logging, PlatformAccessory } from "homebridge";
-import { NukiSmartLockDevice } from "./nuki-smart-lock-device";
-import { NukiDeviceTypes } from "./nuki-device-types";
-import { AbstractNukIDevice } from "./abstract-nuki-device";
-import { NukiBridgeManager } from "./nuki-bridge-manager";
+import { API, Logging, PlatformAccessory } from 'homebridge';
+import { NukiSmartLockDevice } from './nuki-smart-lock-device';
+import { NukiDeviceTypes } from '../api/nuki-device-types';
+import { AbstractNukIDevice } from './abstract-nuki-device';
+import { NukiBridgeManager } from '../api/nuki-bridge-manager';
+import { NukiOpenerDevice } from './nuki-opener-device';
 
 export class AbstractNukiDeviceFactory {
 
@@ -38,6 +39,9 @@ export class AbstractNukiDeviceFactory {
         switch (accessory.context.deviceType) {
             case NukiDeviceTypes.SmartLock:
                 return new NukiSmartLockDevice(this.api, this.log, bridge, accessory);
+
+            case NukiDeviceTypes.Opener:
+                return new NukiOpenerDevice(this.api, this.log, bridge, accessory);
         }
     }
-} 
+}

@@ -1,16 +1,14 @@
 import { API, APIEvent, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig } from 'homebridge';
-import { AbstractNukiDeviceFactory } from './abstract-nuki-device-factory';
-import { AbstractNukIDevice } from './abstract-nuki-device';
-import { NukiBridgeManager } from './nuki-bridge-manager';
-import { NukiBridgeApi } from './nuki-bridge-api';
+import { AbstractNukiDeviceFactory } from './devices/abstract-nuki-device-factory';
+import { AbstractNukIDevice } from './devices/abstract-nuki-device';
+import { NukiBridgeManager } from './api/nuki-bridge-manager';
+import { NukiBridgeApi } from './api/nuki-bridge-api';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import * as http from 'http';
-import * as os from "os";
+import * as os from 'os';
+import { NukiPlatformConfig } from './nuki-platform-config';
 
-interface NukiPlatformConfig {
-    bridges?: [{ id: number, ip: string, port: number, token: string, useHashedToken: boolean }],
-    callbackServer: { ip: string, port: number }
-}
+
 
 export class NukiPlatform implements DynamicPlatformPlugin {
 
@@ -109,7 +107,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
             await bridge.addCallback(callbackUrl);
         }
 
-        http.createServer((request, response) => {
+        const server = http.createServer((request, response) => {
             if (request.method === 'POST') {
                 let buffer = '';
                 request.on('data', (data) => {
@@ -130,7 +128,22 @@ export class NukiPlatform implements DynamicPlatformPlugin {
                     response.end();
                 });
             }
-        }).listen(8890);
+        });
+
+        for (; ;) {
+            try {
+                await new Promise(((resolve, reject) => {
+                    server.listen(this.config.callbackServer.port, resolve);
+                    server.once('error', reject);
+                }));
+                break;
+            } catch (err) {
+                this.log.error('could not start callback server', err);
+                this.log.info('retry in a few seconds...');
+                await new Promise((resolve => setTimeout(resolve, 1000)));
+            }
+        }
+
     }
 
     async syncNukiDevices() {

@@ -1,6 +1,6 @@
 import bent from 'bent';
 import { NukiDeviceTypes } from './nuki-device-types';
-import { LockAction } from './nuki-smart-lock-device';
+import { NukiLockAction } from './nuki-lock-action';
 
 const getJSON = bent('json');
 
@@ -44,13 +44,14 @@ export class NukiBridgeApi {
         }
     }
 
-    async lockAction(nukiId: string, deviceType: NukiDeviceTypes, action: LockAction) {
+    async lockAction(nukiId: string, deviceType: NukiDeviceTypes, action: NukiLockAction) {
         const url = this.getUrl(['lockAction'],
             new Map([
                 ['nukiId', nukiId],
                 ['deviceType', deviceType.toString()],
-                ['action', action.toString()]
-            ])
+                ['action', action.toString()],
+                ['noWait', '0'],
+            ]),
         );
 
         const response = await getJSON(url);
@@ -84,7 +85,7 @@ export class NukiBridgeApi {
             id: this._id,
             ip: this._ip,
             port: this._port,
-            token: this._token
+            token: this._token,
         };
     }
 
