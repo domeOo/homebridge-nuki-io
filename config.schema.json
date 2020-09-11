@@ -1,15 +1,91 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "NukiPlatform",
   "pluginType": "platform",
   "singular": true,
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+      "callbackServer": {
+        "required": false,
+        "type": "object",
+        "properties": {
+          "ip": {
+            "title": "IP Address",
+            "description": "Local IP Address of the Device which runs this Homebridge Instance. Leave empty for Auto-Detection.",
+            "type": "string",
+            "required": false
+          },
+          "port": {
+            "title": "Port",
+            "description": "Choose a open Port on this Device. Leave empty for default Port.",
+            "type": "number",
+            "required": false
+          }
+        }
+      },
+      "bridges": {
+        "description": "Static Bridge Configuration. Leave empty for dynamic configuration.",
+        "type": "array",
+        "required": false,
+        "items": {
+          "title": "Bridges",
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string",
+              "required": true
+            },
+            "ip": {
+              "title": "IP Address",
+              "type": "string",
+              "required": true
+            },
+            "port": {
+              "title": "Port",
+              "type": "number",
+              "required": true
+            },
+            "token": {
+              "title": "Token",
+              "type": "string",
+              "required": true
+            },
+            "hashToken": {
+              "title": "Hash the Token?",
+              "type": "boolean",
+              "required": true
+            }
+          }
+        }
+      },
+      "smartLocks": {
+        "description": "Device specific Configuration",
+        "type": "array",
+        "required": false,
+        "items": {
+          "title": "Smart Locks",
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string",
+              "required": true
+            },
+            "unsecureLockService": {
+              "title": "Unsecure Lock Service?",
+              "description": "Will expose the Lock-Service as Switch. Can be used in Automations without confirmation.",
+              "type": "boolean",
+              "required": true
+            },
+            "unlatchWhenLocked": {
+              "title": "Unlatch When Locked?",
+              "description": "When enabled the Door can be unlatched even the Door is locked.",
+              "type": "boolean",
+              "required": true
+            }
+          }
+        }
       }
     }
   }

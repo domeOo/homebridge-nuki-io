@@ -30,7 +30,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
         this.config = Object.assign(this.getDefaultConfig(), config);
         this.api = api;
         this.nukiBrideManager = new NukiBridgeManager(api.user.storagePath(), this.config.hashToken);
-        this.nukiDeviceFactory = new AbstractNukiDeviceFactory(log, api, this.nukiBrideManager);
+        this.nukiDeviceFactory = new AbstractNukiDeviceFactory(log, api, this.nukiBrideManager, this.config);
 
         api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             log.info('current registered devices', this.accessories.length);
@@ -227,6 +227,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
                 ip: this.getIpAddress(),
                 port: 8890,
             },
+            smartLocks: [],
             hashToken: true,
         };
     }

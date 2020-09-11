@@ -1,13 +1,19 @@
+import { NukiSmartLockConfig } from './devices/nuki-smart-lock-config';
+
 export interface NukiPlatformConfig {
     bridges?: [
         {
-            id: number,
-            ip: string,
-            port: number,
-            token: string,
-            hashToken: boolean
+            id: number;
+            ip: string;
+            port: number;
+            token: string;
+            hashToken: boolean;
         }
     ];
-    callbackServer: { ip: string, port: number };
+    smartLocks: NukiSmartLockConfig[];
+    callbackServer: {
+        ip: string;
+        port: number;
+    };
     hashToken: boolean;
 }

@@ -2,6 +2,7 @@ import { AbstractAccessory } from './abstract-accessory';
 import { API, Logging, PlatformAccessory } from 'homebridge';
 import { NukiBridgeApi } from '../api/nuki-bridge-api';
 import { NukiDeviceTypes } from '../api/nuki-device-types';
+import { NukiDeviceState } from '../api/nuki-device-state';
 
 export abstract class AbstractNukIDevice extends AbstractAccessory {
 
@@ -19,5 +20,5 @@ export abstract class AbstractNukIDevice extends AbstractAccessory {
         return this._deviceType;
     }
 
-    abstract update(lastKnownState: unknown);
+    abstract update(lastKnownState: NukiDeviceState);
 }
