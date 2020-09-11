@@ -28,21 +28,6 @@ export abstract class AbstractAccessory {
         this._informationService = this._accessory.getService(api.hap.Service.AccessoryInformation) as Service;
     }
 
-    protected getOrAddService(givenService: typeof Service, displayName?: string, subtype?: string): Service {
-        let service: Service | undefined;
-        if (subtype) {
-            service = this._accessory.getServiceById(givenService as never, subtype);
-        } else {
-            service = this._accessory.getService(givenService as never);
-        }
-
-        if (!service) {
-            service = this._accessory.addService(givenService, displayName, subtype);
-        }
-
-        return service;
-    }
-
     get id(): string {
         return this._id;
     }
@@ -61,5 +46,20 @@ export abstract class AbstractAccessory {
 
     public toString(): string {
         return `name=${this.name} id=${this.id} uuid=${this.uuid}`;
+    }
+
+    protected getOrAddService(givenService: typeof Service, displayName?: string, subtype?: string): Service {
+        let service: Service | undefined;
+        if (subtype) {
+            service = this._accessory.getServiceById(givenService as never, subtype);
+        } else {
+            service = this._accessory.getService(givenService as never);
+        }
+
+        if (!service) {
+            service = this._accessory.addService(givenService, displayName, subtype);
+        }
+
+        return service;
     }
 }

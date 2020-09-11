@@ -15,9 +15,9 @@ export abstract class AbstractNukIDevice extends AbstractAccessory {
         this._nukiApi = nukiApi;
     }
 
-    abstract update(lastKnownState: unknown);
-
     get deviceType(): NukiDeviceTypes {
         return this._deviceType;
     }
+
+    abstract update(lastKnownState: unknown);
 }

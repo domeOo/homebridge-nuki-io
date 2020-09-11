@@ -11,22 +11,29 @@ export class NukiBridgeManager {
 
     private readonly _storagePath: string;
 
+    private readonly _hashToken: boolean;
+
     private readonly _bridgeFilePath: string;
 
     private readonly _bridges: NukiBridgeApi[] = [];
 
-    constructor(storagePath: string) {
+    constructor(storagePath: string, hashToken: boolean) {
         this._storagePath = storagePath;
+        this._hashToken = hashToken;
         this._bridgeFilePath = path.join(this._storagePath, NukiBridgeManager.FILENAME);
         if (!fs.existsSync(this._bridgeFilePath)) {
             fs.writeFileSync(this._bridgeFilePath, JSON.stringify(this._bridges));
         }
     }
 
+    get bridges(): NukiBridgeApi[] {
+        return this._bridges;
+    }
+
     load() {
         const bridges = JSON.parse(fs.readFileSync(this._bridgeFilePath).toString());
         for (const bridge of bridges) {
-            this._bridges.push(NukiBridgeApi.fromJSON(bridge));
+            this._bridges.push(NukiBridgeApi.fromJSON(bridge, this._hashToken));
         }
     }
 
@@ -59,14 +66,10 @@ export class NukiBridgeManager {
             throw new Error('authentication failed');
         }
 
-        return new NukiBridgeApi(id, ip, port, response.token);
+        return new NukiBridgeApi(id, ip, port, response.token, this._hashToken);
     }
 
     getById(id: number) {
         return this._bridges.find(bridge => bridge.id === id);
-    }
-
-    get bridges(): NukiBridgeApi[] {
-        return this._bridges;
     }
 }

@@ -9,7 +9,6 @@ import * as os from 'os';
 import { NukiPlatformConfig } from './nuki-platform-config';
 
 
-
 export class NukiPlatform implements DynamicPlatformPlugin {
 
     private readonly log: Logging;
@@ -28,9 +27,9 @@ export class NukiPlatform implements DynamicPlatformPlugin {
 
     constructor(log: Logging, config: PlatformConfig, api: API) {
         this.log = log;
-        this.config = config as any;
+        this.config = Object.assign(this.getDefaultConfig(), config);
         this.api = api;
-        this.nukiBrideManager = new NukiBridgeManager(api.user.storagePath());
+        this.nukiBrideManager = new NukiBridgeManager(api.user.storagePath(), this.config.hashToken);
         this.nukiDeviceFactory = new AbstractNukiDeviceFactory(log, api, this.nukiBrideManager);
 
         api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
@@ -42,7 +41,6 @@ export class NukiPlatform implements DynamicPlatformPlugin {
     }
 
     async initPlatform() {
-        this.config = Object.assign(this.getDefaultConfig(), this.config);
         this.log.info(JSON.stringify(this.config));
         await this.loadBridges();
         await this.startCallbackServer();
@@ -59,7 +57,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
 
             this.nukiBrideManager.deleteAll();
             for (const bridge of this.config.bridges) {
-                const brideApi = new NukiBridgeApi(bridge.id, bridge.ip, bridge.port, bridge.token);
+                const brideApi = new NukiBridgeApi(bridge.id, bridge.ip, bridge.port, bridge.token, bridge.hashToken);
                 this.nukiBrideManager.persist(brideApi);
             }
         } else {
@@ -207,15 +205,6 @@ export class NukiPlatform implements DynamicPlatformPlugin {
         return devices;
     }
 
-    private getDefaultConfig(): NukiPlatformConfig {
-        return {
-            callbackServer: {
-                ip: this.getIpAddress(),
-                port: 8890,
-            },
-        };
-    }
-
     getIpAddress(): string {
         const interfaces = os.networkInterfaces();
         for (const devName in interfaces) {
@@ -230,5 +219,15 @@ export class NukiPlatform implements DynamicPlatformPlugin {
         }
 
         return '0.0.0.0';
+    }
+
+    private getDefaultConfig(): NukiPlatformConfig {
+        return {
+            callbackServer: {
+                ip: this.getIpAddress(),
+                port: 8890,
+            },
+            hashToken: true,
+        };
     }
 }
