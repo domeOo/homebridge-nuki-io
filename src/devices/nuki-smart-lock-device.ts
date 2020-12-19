@@ -91,7 +91,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         }
 
         if (value !== this._api.hap.Characteristic.LockCurrentState.UNSECURED
-            || (!this._config.unlatchWhenLocked && true) { // TODO: Implement me!
+            || (!this._config.unlatchWhenLocked)) { // TODO: Implement me!
             this._resetUnlatchTimeout = setTimeout(resetUnlatch.bind(this), NukiSmartLockDevice.RESET_STATE_TIMEOUT);
             return callback(null);
         }
