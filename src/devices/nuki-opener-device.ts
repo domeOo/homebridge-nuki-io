@@ -97,7 +97,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.UNSECURED);
         }
         
-        // Sets the ring action state
+        // Sets the ring action state //todo: check if ring to action is deacivated after ring and dont ring the bell when continius mod is on
         if (this._doorRingSignalService && lastKnownState.ringactionState && lastKnownState.state === NukiOpenerState.ONLINE ) {
             this._log.debug('Opener with id: ' +this.id + ' - Updating doorbell: Ring');
             this._doorRingSignalService.setCharacteristic(this._characteristic.ContactSensorState,
