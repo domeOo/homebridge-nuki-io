@@ -2,6 +2,7 @@ import bent from 'bent';
 import { NukiDeviceTypes } from './nuki-device-types';
 import { NukiLockAction } from './nuki-lock-action';
 import * as crypto from 'crypto';
+import { NukiOpenerAction } from "./nuki-opener-action";
 
 const getJSON = bent('json');
 
@@ -65,7 +66,7 @@ export class NukiBridgeApi {
         }
     }
 
-    async lockAction(nukiId: string, deviceType: NukiDeviceTypes, action: NukiLockAction) {
+    async lockAction(nukiId: string, deviceType: NukiDeviceTypes, action: NukiLockAction | NukiOpenerAction) {
         const url = this.getUrl(['lockAction'],
             new Map([
                 ['nukiId', nukiId],
