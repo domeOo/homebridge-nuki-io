@@ -90,6 +90,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED');
             this._lockService.updateCharacteristic(this._characteristic.LockCurrentState, this._characteristic.LockCurrentState.UNSECURED);
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.UNSECURED);
+            //todo: here maybe add option to disable rto after first ring?
         }
         if (lastKnownState.state == NukiOpenerState.OPENING) {
             this._log(this.id + ' - Updating lock state: -/UNSECURED');
@@ -97,8 +98,8 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         }
 
         // Sets the ring action state
-        if (this._doorRingSignalService && lastKnownState.ringactionState &&
-            (lastKnownState.state !== NukiOpenerState.RTO_ACTIVE || lastKnownState.mode !== 3)) {
+        if (this._doorRingSignalService && lastKnownState.ringactionState && lastKnownState.state !== NukiOpenerState.OPEN &&
+            (lastKnownState.state !== NukiOpenerState.RTO_ACTIVE || lastKnownState.mode !== 3) ) {
 
             this._log(this.id + ' - Updating doorbell: Ring');
             this._doorRingSignalService.setCharacteristic(this._characteristic.On, true);
