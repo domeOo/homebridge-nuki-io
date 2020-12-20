@@ -127,7 +127,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
     }
 
     update(lastKnownState: NukiDeviceState) {
-        this._log.debug('lastKnownState', lastKnownState);
+        this._log.debug('lastKnownState Lock', lastKnownState);
 
         // Update Lock.
         if (this._lockService.getServiceId() === this._api.hap.Service.Switch.UUID) {
