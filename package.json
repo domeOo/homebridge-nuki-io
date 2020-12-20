@@ -27,6 +27,7 @@
     "homebridge-plugin"
   ],
   "dependencies": {
+    "@types/bent": "^7.3.2",
     "bent": "^7.3.10"
   },
   "devDependencies": {
