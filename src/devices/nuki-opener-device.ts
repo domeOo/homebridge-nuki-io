@@ -20,7 +20,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
     private readonly _characteristic: any;
 
-    private bellRingLightOn = false;
+    private bellRingOn = false;
 
     private isOpening = false;
 
@@ -40,9 +40,9 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             .on('set', this.handleLockCurrentSwitchSet.bind(this));
 
 
-        this._doorRingSignalService = this.getOrAddService(api.hap.Service.Lightbulb, 'Door-Ring Indicator');
+        this._doorRingSignalService = this.getOrAddService(api.hap.Service.ContactSensor, 'Door-Ring Indicator');
 
-        this._doorRingSignalService.getCharacteristic(api.hap.Characteristic.On)
+        this._doorRingSignalService.getCharacteristic(api.hap.Characteristic.ContactSensorState)
             .on('get', this.handleDoorRingGet.bind(this))
             .on('set', this.handleDoorRingSet.bind(this));
 
@@ -96,18 +96,14 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             this._log(this.id + ' - Updating lock state: -/UNSECURED becaus of opening');
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.UNSECURED);
         }
-
+        
         // Sets the ring action state
-        if (this._doorRingSignalService) {
-
-            if ( lastKnownState.ringactionState && lastKnownState.state !== NukiOpenerState.RTO_ACTIVE) {
-
-                this._log.debug(this.id + ' - Updating doorbell state: Ring');
-                this._log.debug('state= ' + lastKnownState);
-                this._doorRingSignalService.setCharacteristic(this._characteristic.On, true);
-
-            }
+        if (this._doorRingSignalService && lastKnownState.ringactionState && lastKnownState.state === NukiOpenerState.ONLINE ) {
+            this._log.debug('Opener with id: ' +this.id + ' - Updating doorbell: Ring');
+            this._doorRingSignalService.setCharacteristic(this._characteristic.ContactSensorState,
+                this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
         }
+
         // Sets the status for the continuous mode
         if (this._continuousModeSwitchService) {
             this._log.debug(this.id + ' - Updating Continuous Mode: ' + lastKnownState.mode);
@@ -157,21 +153,25 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
 
     handleDoorRingGet(callback: CharacteristicSetCallback) {
-        this._log.info('Current state of the switch was returned: ' + (this.bellRingLightOn ? 'ON' : 'OFF'));
-        callback(null, this.bellRingLightOn);
+        this._log.info('Current state of the switch was returned: ' + (this.bellRingOn ? 'ON' : 'OFF'));
+
+        callback(null, this.bellRingOn ?
+            this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED :
+            this._characteristic.ContactSensorState.CONTACT_DETECTED);
     }
 
     handleDoorRingSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-        if (value) {
-            this._log.debug('RING RING RING RING');
-            this.bellRingLightOn = true;
+        if (value === this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED) {
+            this._log.debug('DING DONG!');
+            this.bellRingOn = true;
             setTimeout(() => {
-                this._doorRingSignalService.setCharacteristic(this._characteristic.On, false);
+                this._doorRingSignalService.setCharacteristic(this._characteristic.ContactSensorState,
+                    this._characteristic.ContactSensorState.CONTACT_DETECTED);
             }, 500);
             return callback(null);
         } else {
             this._log.debug('RING turned off');
-            this.bellRingLightOn = false;
+            this.bellRingOn = false;
             return callback(null);
         }
     }
