@@ -14,7 +14,7 @@ import { NukiLockAction } from '../api/nuki-lock-action';
 import { NukiLockState } from '../api/nuki-lock-state';
 import { NukiDoorSensorState } from '../api/nuki-door-sensor-state';
 import { NukiDeviceState } from '../api/nuki-device-state';
-import { NukiSmartLockConfig } from "./nuki-smart-lock-config";
+import { NukiSmartLockConfig } from './nuki-smart-lock-config';
 
 
 export class NukiSmartLockDevice extends AbstractNukIDevice {
