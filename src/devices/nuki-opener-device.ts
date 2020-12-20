@@ -81,30 +81,33 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         // Sets the lock state
 
         if (lastKnownState.state === NukiOpenerState.ONLINE || lastKnownState.state === NukiOpenerState.RTO_ACTIVE) {
-            this._log(this.id + ' - Updating lock state: SECURED/SECURED');
+            this._log(this.id + ' - Updating lock state: SECURED/SECURED becuas of rto active or online');
             this._lockService.updateCharacteristic(this._characteristic.LockCurrentState, this._characteristic.LockCurrentState.SECURED);
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.SECURED);
         }
 
         if (lastKnownState.state === NukiOpenerState.OPEN) {
-            this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED');
+            this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED becaus of open');
             this._lockService.updateCharacteristic(this._characteristic.LockCurrentState, this._characteristic.LockCurrentState.UNSECURED);
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.UNSECURED);
             //todo: here maybe add option to disable rto after first ring?
         }
-        if (lastKnownState.state == NukiOpenerState.OPENING) {
-            this._log(this.id + ' - Updating lock state: -/UNSECURED');
+        if (lastKnownState.state === NukiOpenerState.OPENING) {
+            this._log(this.id + ' - Updating lock state: -/UNSECURED becaus of opening');
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.UNSECURED);
         }
 
         // Sets the ring action state
-        if (this._doorRingSignalService && lastKnownState.ringactionState && lastKnownState.state !== NukiOpenerState.OPEN &&
-            (lastKnownState.state !== NukiOpenerState.RTO_ACTIVE || lastKnownState.mode !== 3) ) {
+        if (this._doorRingSignalService) {
 
-            this._log(this.id + ' - Updating doorbell: Ring');
-            this._doorRingSignalService.setCharacteristic(this._characteristic.On, true);
+            if ( lastKnownState.ringactionState && lastKnownState.state !== NukiOpenerState.RTO_ACTIVE) {
+
+                this._log.debug(this.id + ' - Updating doorbell state: Ring');
+                this._log.debug('state= ' + lastKnownState);
+                this._doorRingSignalService.setCharacteristic(this._characteristic.On, true);
+
+            }
         }
-
         // Sets the status for the continuous mode
         if (this._continuousModeSwitchService) {
             this._log.debug(this.id + ' - Updating Continuous Mode: ' + lastKnownState.mode);
