@@ -22,7 +22,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
     static BATTERY_LEVEL = 50;
 
     static RESET_STATE_TIMEOUT = 1500;
-
+//todo: get from config else take default
     static UNLATCH_NAME = 'Unlatch Door';
 
     static LOCK_NAME = 'Lock Door';
@@ -52,7 +52,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
             api.hap.Characteristic.ChargingState,
             api.hap.Characteristic.ChargingState.NOT_CHARGEABLE,
         );
-
+//check is senosr is installed ? maybe letr user set in config
         this._contactSensorService = this._accessory.getService(api.hap.Service.ContactSensor);
 
         this._unlatchService = this.getOrAddService(api.hap.Service.LockMechanism, NukiSmartLockDevice.UNLATCH_NAME);
@@ -69,12 +69,14 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
             .setCharacteristic(api.hap.Characteristic.SerialNumber, this.id);
 
     }
-
+    //todo: use or delete
     handleBatteryLevelGet(callback: CharacteristicGetCallback) {
         callback(null, 50);
     }
 
     handleUnlatchTargetStateSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+
+      /*
         const resetUnlatch = () => {
             this._unlatchService.updateCharacteristic(
                 this._api.hap.Characteristic.LockCurrentState,
@@ -90,21 +92,22 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
             clearTimeout(this._resetUnlatchTimeout);
         }
 
+        this._log.debug('value: '+value);
         if (value !== this._api.hap.Characteristic.LockCurrentState.UNSECURED
-            || (!this._config.unlatchWhenLocked)) { // TODO: Implement me!
+            || (!this._config.unlatchWhenLocked)) { // TODO: Implement me! maybe not possible beacuse door moove after unlatch ?
             this._resetUnlatchTimeout = setTimeout(resetUnlatch.bind(this), NukiSmartLockDevice.RESET_STATE_TIMEOUT);
-            return callback(null);
+            //return callback(null);
         }
-
+*/
         this._nukiApi.lockAction(this.id, NukiDeviceTypes.SmartLock, NukiLockAction.UNLATCH).then(() => {
             this._unlatchService.updateCharacteristic(
                 this._api.hap.Characteristic.LockCurrentState,
                 this._api.hap.Characteristic.LockCurrentState.UNSECURED,
             );
-            this._resetUnlatchTimeout = setTimeout(resetUnlatch.bind(this), NukiSmartLockDevice.RESET_STATE_TIMEOUT);
+            // this._resetUnlatchTimeout = setTimeout(resetUnlatch.bind(this), NukiSmartLockDevice.RESET_STATE_TIMEOUT);
         }).catch((err) => {
             this._log.error(err);
-            resetUnlatch();
+            //resetUnlatch();
         });
 
         callback(null);
@@ -194,26 +197,28 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
             );
         }
 
-        // Update Unlatch Lock.
-        if (lastKnownState.state === NukiLockState.UNLATCHING
-            || lastKnownState.state === NukiLockState.UNLATCHED) {
-            this._unlatchService.updateCharacteristic(
-                this._api.hap.Characteristic.LockCurrentState,
-                this._api.hap.Characteristic.LockCurrentState.UNSECURED,
-            );
-            this._unlatchService.updateCharacteristic(
-                this._api.hap.Characteristic.LockTargetState,
-                this._api.hap.Characteristic.LockTargetState.UNSECURED,
-            );
-        } else {
-            this._unlatchService.updateCharacteristic(
-                this._api.hap.Characteristic.LockCurrentState,
-                this._api.hap.Characteristic.LockCurrentState.SECURED,
-            );
-            this._unlatchService.updateCharacteristic(
-                this._api.hap.Characteristic.LockTargetState,
-                this._api.hap.Characteristic.LockTargetState.SECURED,
-            );
+        if(this._unlatchService) {
+            // Update Unlatch Lock.
+            if (lastKnownState.state === NukiLockState.UNLATCHING
+                || lastKnownState.state === NukiLockState.UNLATCHED) {
+                this._unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockCurrentState,
+                    this._api.hap.Characteristic.LockCurrentState.UNSECURED,
+                );
+                this._unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockTargetState,
+                    this._api.hap.Characteristic.LockTargetState.UNSECURED,
+                );
+            } else {
+                this._unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockCurrentState,
+                    this._api.hap.Characteristic.LockCurrentState.SECURED,
+                );
+                this._unlatchService.updateCharacteristic(
+                    this._api.hap.Characteristic.LockTargetState,
+                    this._api.hap.Characteristic.LockTargetState.SECURED,
+                );
+            }
         }
 
         // Update Battery.
