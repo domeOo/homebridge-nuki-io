@@ -6,6 +6,7 @@ import { NukiBridgeManager } from '../api/nuki-bridge-manager';
 import { NukiOpenerDevice } from './nuki-opener-device';
 import { NukiPlatformConfig } from '../nuki-platform-config';
 import { NUKI_SMART_LOCK_DEFAULT_CONFIG } from "./nuki-smart-lock-config";
+import { NUKI_OPENER_DEFAULT_CONFIG } from "./nuki-opener-config";
 
 export class AbstractNukiDeviceFactory {
 
@@ -41,9 +42,11 @@ export class AbstractNukiDeviceFactory {
             return undefined;
         }
 
+        let config;
         switch (accessory.context.deviceType) {
+
             case NukiDeviceTypes.SmartLock:
-                let config = this.config.smartLocks.find(_ => _.id === accessory.context.id);
+                config = this.config.smartLocks.find(_ => _.id === accessory.context.id);
                 if (config) {
                     this.log.debug('found specific device config for SmartLock', config);
                 }
@@ -53,7 +56,14 @@ export class AbstractNukiDeviceFactory {
                 return new NukiSmartLockDevice(this.api, this.log, bridge, accessory, config);
 
             case NukiDeviceTypes.Opener:
-                return new NukiOpenerDevice(this.api, this.log, bridge, accessory);
+                config = this.config.openers.find(_ => _.id === accessory.context.id);
+                if (config) {
+                    this.log.debug('found specific device config for SmartLock', config);
+                }
+                config = Object.assign(NUKI_OPENER_DEFAULT_CONFIG, config, {
+                    id: accessory.context.id,
+                });
+                return new NukiOpenerDevice(this.api, this.log, bridge, accessory, config);
         }
     }
 }

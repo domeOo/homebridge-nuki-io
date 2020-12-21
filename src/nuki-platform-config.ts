@@ -1,4 +1,5 @@
 import { NukiSmartLockConfig } from './devices/nuki-smart-lock-config';
+import { NukiOpenerConfig } from './devices/nuki-opener-config';
 
 export interface NukiPlatformConfig {
     bridges?: [
@@ -11,6 +12,7 @@ export interface NukiPlatformConfig {
         }
     ];
     smartLocks: NukiSmartLockConfig[];
+    openers: NukiOpenerConfig[];
     callbackServer: {
         ip: string;
         port: number;

@@ -2,6 +2,8 @@
   "pluginAlias": "NukiPlatform",
   "pluginType": "platform",
   "singular": true,
+  "headerDisplay": "Tap *Add Accessory*, and select *I Don't Have a Code or Cannot Scan*.\n4. Enter the Homebridge PIN, this can be found under the QR code in Homebridge UI or your Homebridge logs, alternatively you can select *Use Camera* and scan the QR code again.\n\nFor help and examples of common configurations please read the [wiki](https://github.com/KhaosT/homebridge-camera-ffmpeg/wiki).",
+  "footerDisplay": "The **ffmpeg** binary must be installed on your system for this plugin to work.",
   "schema": {
     "type": "object",
     "properties": {
@@ -13,12 +15,15 @@
             "title": "IP Address",
             "description": "Local IP Address of the Device which runs this Homebridge Instance. Leave empty for Auto-Detection.",
             "type": "string",
+            "format": "ipv4",
             "required": false
           },
           "port": {
             "title": "Port",
             "description": "Choose a open Port on this Device. Leave empty for default Port.",
             "type": "number",
+            "default": "8890",
+            "placeholder": "8890",
             "required": false
           }
         }
@@ -39,11 +44,14 @@
             "ip": {
               "title": "IP Address",
               "type": "string",
+              "format": "ipv4",
               "required": true
             },
             "port": {
               "title": "Port",
               "type": "number",
+              "default": "8080",
+              "placeholder": "8080",
               "required": true
             },
             "token": {
@@ -83,6 +91,56 @@
               "description": "When enabled the Door can be unlatched even the Door is locked.",
               "type": "boolean",
               "required": true
+            }
+          }
+        }
+      },
+      "openers": {
+        "description": "Device specific Configuration",
+        "type": "array",
+        "required": false,
+        "items": {
+          "title": "Openers",
+          "type": "object",
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string",
+              "required": true
+            },
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "default": "Opener",
+              "required": false
+            },
+            "rtoSwitchService": {
+              "title": "Ring to Open Service Switch ",
+              "description": "Expose a Switch to set Ring to Open state",
+              "type": "boolean"
+            },
+            "continuousModeSwitchService": {
+              "title": "Continuous Mode Service Switch ",
+              "description": "Expose a Switch to set Continuous Mode state",
+              "type": "boolean"
+            },
+            "doorbellService": {
+              "title": "Doorbell Service Switch ",
+              "description": "Expose a Contactsensor that react ons Doorbell Ring while not in RTO or Continuous Mode",
+              "type": "boolean"
+            },
+            "doorbellMuteService": {
+              "title": "Mute / Unmute Doorbell Ring Switch",
+              "description": "Expose a Switch to Mute / Unmute Doorbell Ring Switch over the Nuki Web Api. Needs an WebApi Access Token",
+              "type": "boolean"
+            },
+            "webApiToken": {
+              "title": "WebApi Token",
+              "type": "string",
+              "description": "Needed for Doorbell Mute button",
+              "condition": {
+                "functionBody": "return model.openers[arrayIndices].doorbellMuteService === true;"
+              }
             }
           }
         }

@@ -228,6 +228,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
                 port: 8890,
             },
             smartLocks: [],
+            openers: [],
             hashToken: true,
         };
     }
