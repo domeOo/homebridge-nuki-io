@@ -6,7 +6,7 @@ export interface NukiOpenerConfig {
     doorbellService: boolean;
     openerSoundService: boolean;
     doorbellSoundService: boolean;
-    doorbellSoundSettings: Array<string>;
+    doorbellSoundSettings: Array<boolean>;
     webApiToken: string
 }
 
@@ -18,6 +18,6 @@ export const NUKI_OPENER_DEFAULT_CONFIG: NukiOpenerConfig = {
     doorbellService: false,
     openerSoundService: false,
     doorbellSoundService: false,
-    doorbellSoundSettings: [],
+    doorbellSoundSettings: [true, true, true],
     webApiToken: ''
 };

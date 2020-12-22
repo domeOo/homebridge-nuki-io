@@ -129,18 +129,18 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         });
     }
 
-    update(lastKnownState: NukiDeviceState) {
-        this._log.debug('lastKnownState Lock', lastKnownState);
+    update(lastKnownBridgeState: NukiDeviceState) {
+        //this._log.debug('lastKnownBridgeState Lock', lastKnownBridgeState);
 
         // Update Lock.
         if (this._lockService.getServiceId() === this._api.hap.Service.Switch.UUID) {
-            this._lockService.updateCharacteristic(this._api.hap.Characteristic.On, lastKnownState.state === NukiLockState.LOCKED);
+            this._lockService.updateCharacteristic(this._api.hap.Characteristic.On, lastKnownBridgeState.state === NukiLockState.LOCKED);
 
         } else if (this._lockService.getServiceId() === this._api.hap.Service.LockMechanism.UUID) {
             let lockCurrentState = this._unlatchService.getCharacteristic(this._api.hap.Characteristic.LockCurrentState).value;
             let lockTargetState = this._unlatchService.getCharacteristic(this._api.hap.Characteristic.LockTargetState).value;
 
-            switch (lastKnownState.state) {
+            switch (lastKnownBridgeState.state) {
                 case NukiLockState.LOCKED:
                     lockCurrentState = this._api.hap.Characteristic.LockCurrentState.SECURED;
                     lockTargetState = this._api.hap.Characteristic.LockTargetState.SECURED;
@@ -199,8 +199,8 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
 
         if(this._unlatchService) {
             // Update Unlatch Lock.
-            if (lastKnownState.state === NukiLockState.UNLATCHING
-                || lastKnownState.state === NukiLockState.UNLATCHED) {
+            if (lastKnownBridgeState.state === NukiLockState.UNLATCHING
+                || lastKnownBridgeState.state === NukiLockState.UNLATCHED) {
                 this._unlatchService.updateCharacteristic(
                     this._api.hap.Characteristic.LockCurrentState,
                     this._api.hap.Characteristic.LockCurrentState.UNSECURED,
@@ -222,7 +222,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         }
 
         // Update Battery.
-        if (lastKnownState.batteryCritical) {
+        if (lastKnownBridgeState.batteryCritical) {
             this._batteryService.updateCharacteristic(
                 this._api.hap.Characteristic.StatusLowBattery,
                 this._api.hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW,
@@ -235,7 +235,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
         }
 
         // Update Door Sensor.
-        if (lastKnownState.doorsensorState === NukiDoorSensorState.DEACTIVATED) {
+        if (lastKnownBridgeState.doorsensorState === NukiDoorSensorState.DEACTIVATED) {
             if (this._contactSensorService) {
                 this._accessory.removeService(this._contactSensorService);
                 this._contactSensorService = undefined;
@@ -250,8 +250,8 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
                 this._contactSensorService.getCharacteristic(this._api.hap.Characteristic.ContactSensorState);
             }
 
-            const isFault = lastKnownState.doorsensorState === NukiDoorSensorState.CALIBRATING
-                || lastKnownState.doorsensorState === NukiDoorSensorState.DOOR_STATE_UNKNOWN;
+            const isFault = lastKnownBridgeState.doorsensorState === NukiDoorSensorState.CALIBRATING
+                || lastKnownBridgeState.doorsensorState === NukiDoorSensorState.DOOR_STATE_UNKNOWN;
 
             if (isFault) {
                 this._contactSensorService.updateCharacteristic(
@@ -260,7 +260,7 @@ export class NukiSmartLockDevice extends AbstractNukIDevice {
                 );
             } else {
                 let contactSensorState;
-                if (lastKnownState.doorsensorState === NukiDoorSensorState.DOOR_OPENED) {
+                if (lastKnownBridgeState.doorsensorState === NukiDoorSensorState.DOOR_OPENED) {
                     contactSensorState = this._api.hap.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
                 } else {
                     contactSensorState = this._api.hap.Characteristic.ContactSensorState.CONTACT_DETECTED;

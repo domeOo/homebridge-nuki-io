@@ -9,6 +9,6 @@ export interface NukiDeviceState {
     batteryCritical: boolean;
     doorsensorState: NukiDoorSensorState;
     doorsensorStateName: string;
-    ringactionTimestamp: Date;
+    ringactionTimestamp: string;
     ringactionState: boolean;
 }

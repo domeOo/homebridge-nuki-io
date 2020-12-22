@@ -20,5 +20,5 @@ export abstract class AbstractNukIDevice extends AbstractAccessory {
         return this._deviceType;
     }
 
-    abstract update(lastKnownState: NukiDeviceState);
+    abstract update(lastKnownBridgeState: NukiDeviceState);
 }

@@ -7,6 +7,7 @@ import { NukiOpenerAction } from '../api/nuki-opener-action';
 import { NukiOpenerState } from '../api/nuki-opener-state';
 import { NukiOpenerMode } from '../api/nuki-opener-mode';
 import { NukiOpenerConfig } from './nuki-opener-config';
+import { NukiLockState } from "../api/nuki-lock-state";
 
 export class NukiOpenerDevice extends AbstractNukIDevice {
 
@@ -35,7 +36,9 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
     private readonly _config: NukiOpenerConfig;
 
-    protected readonly _webId: number;
+    private readonly _webId: number;
+
+    private _lastKnownState: NukiOpenerState | NukiLockState;
 
 
     constructor(api: API, log: Logging, nukiApi: NukiBridgeApi, accessory: PlatformAccessory, config: NukiOpenerConfig) {
@@ -43,9 +46,8 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         this._config = config;
         const Nuki = require('nuki-web-api');
         this._nukiWebApi = new Nuki(config.webApiToken);
-
         this._webId = NukiOpenerDevice.calculateWebId(this.id);
-
+        this._lastKnownState = NukiOpenerState.ONLINE;
         this._characteristic = this._api.hap.Characteristic;
 
         this._lockService = this.getOrAddService(api.hap.Service.LockMechanism, 'Opener Öffnen');
@@ -140,23 +142,26 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             .setCharacteristic(api.hap.Characteristic.SerialNumber, this.id);
     }
 
-    update(lastKnownState: NukiDeviceState) {
-        this._log.debug('lastKnownState Opener', lastKnownState);
+    update(lastKnownBridgeState: NukiDeviceState) {
 
         // Checks if the state exists, which is not the case if the device is unavailable
-        if (!lastKnownState) {
+        if (!lastKnownBridgeState) {
             return;
         }
+        console.log('Last bridge')
+        console.log(lastKnownBridgeState);
+        console.log('Last known');
+        console.log(this._lastKnownState);
 
         // Sets the lock state
 
-        if (lastKnownState.state === NukiOpenerState.ONLINE || lastKnownState.state === NukiOpenerState.RTO_ACTIVE) {
+        if (lastKnownBridgeState.state === NukiOpenerState.ONLINE || lastKnownBridgeState.state === NukiOpenerState.RTO_ACTIVE) {
             this._log(this.id + ' - Updating lock state: SECURED/SECURED becuas of rto active or online');
             this._lockService.updateCharacteristic(this._characteristic.LockCurrentState, this._characteristic.LockCurrentState.SECURED);
             this._lockService.updateCharacteristic(this._characteristic.LockTargetState, this._characteristic.LockTargetState.SECURED);
         }
 
-        if (lastKnownState.state === NukiOpenerState.OPEN) {
+        if (lastKnownBridgeState.state === NukiOpenerState.OPEN) {
             this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED because of open');
             this._lockService.updateCharacteristic(
                 this._characteristic.LockCurrentState,
@@ -168,47 +173,66 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             );
             //todo: here maybe add option to disable rto after first ring?
         }
-        if (lastKnownState.state === NukiOpenerState.OPENING) {
+        if (lastKnownBridgeState.state === NukiOpenerState.OPENING) {
             this._log(this.id + ' - Updating lock state: -/UNSECURED becaus of opening');
             this._lockService.updateCharacteristic(
                 this._characteristic.LockTargetState,
                 this._characteristic.LockTargetState.UNSECURED,
             );
         }
-        // Sets the ring action state //todo: check if ring to action is deacivated after ring and
-        if (this._doorRingSignalService && lastKnownState.ringactionState
-            && lastKnownState.state === NukiOpenerState.ONLINE
-            && lastKnownState.mode !== NukiOpenerMode.CONTINUOUS_MODE) {
 
-            this._log.debug('Opener with id: ' + this.id + ' - Updating doorbell: Ring');
-            this._doorRingSignalService.setCharacteristic(
-                this._characteristic.ContactSensorState,
-                this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+
+
+
+
+        // Sets the ring action state //todo: check if ring to action is deacivated after ring and
+        if (this._doorRingSignalService && lastKnownBridgeState.ringactionState
+            && lastKnownBridgeState.state === NukiOpenerState.ONLINE
+            && lastKnownBridgeState.mode !== NukiOpenerMode.CONTINUOUS_MODE) {
+
+
+            if ( this._lastKnownState !== NukiOpenerState.OPENING && this._lastKnownState !== NukiOpenerState.OPEN) {
+                this._log.debug('Opener with id: ' + this.id + ' - Updating doorbell: Ring');
+                this._doorRingSignalService.setCharacteristic(
+                    this._characteristic.ContactSensorState,
+                    this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
+
+            } else {
+                this._log.debug('Fake doorbell because of tro deactivation after frist ring');
+                this._lastKnownState = NukiOpenerState.ONLINE;
+            }
         }
+        /*
+        '2020-12-22T17:31:05+00:00'
+        2020-12-22T17:31:05+00:00'
+        2020-12-22T17:31:05+00:00'
+        2020-12-22T17:32:48+00:00'
+
 
         // Sets the status for the continuous mode
+         */
         if (this._continuousModeSwitchService) {
-            this._log.debug(this.id + ' - Updating Continuous Mode: ' + lastKnownState.mode);
+            this._log.debug(this.id + ' - Updating Continuous Mode: ' + lastKnownBridgeState.mode);
             this._continuousModeSwitchService.updateCharacteristic(
                 this._characteristic.On,
-                lastKnownState.mode === 3,
+                lastKnownBridgeState.mode === 3,
             );
         }
 
         // Sets the status for RTO
         if (this._rtoSwitchService) {
-            if (lastKnownState.state === NukiOpenerState.ONLINE || lastKnownState.state === NukiOpenerState.RTO_ACTIVE) {
-                this._log.debug(this.id + ' - Updating RTO: ' + lastKnownState.state);
+            if (lastKnownBridgeState.state === NukiOpenerState.ONLINE || lastKnownBridgeState.state === NukiOpenerState.RTO_ACTIVE) {
+                this._log.debug(this.id + ' - Updating RTO: ' + lastKnownBridgeState.state);
                 this._rtoSwitchService.updateCharacteristic(
                     this._characteristic.On,
-                    lastKnownState.state === NukiOpenerState.RTO_ACTIVE,
+                    lastKnownBridgeState.state === NukiOpenerState.RTO_ACTIVE,
                 );
             }
         }
 
         // Sets the status of the battery
-        this._log.debug(this.id + ' - Updating critical battery: ' + lastKnownState.batteryCritical);
-        if (lastKnownState.batteryCritical) {
+        this._log.debug(this.id + ' - Updating critical battery: ' + lastKnownBridgeState.batteryCritical);
+        if (lastKnownBridgeState.batteryCritical) {
             this._lockService.updateCharacteristic(
                 this._characteristic.StatusLowBattery,
                 this._characteristic.StatusLowBattery.BATTERY_LEVEL_LOW,
@@ -219,6 +243,8 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
                 this._characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL,
             );
         }
+
+        this._lastKnownState = lastKnownBridgeState.state;
     }
 
     handleRtoSwitchServiceSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
@@ -235,7 +261,6 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
     handleOpenerSoundSwitchServiceGet(callback: CharacteristicSetCallback) {
 
         this._nukiWebApi.getSmartlock(this._webId).then((res) => {
-            console.log(res);
             return res.openerAdvancedConfig.soundLevel;
 
         }).then((res) => {
@@ -332,22 +357,19 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
                 let settings = '';
                 for (const item of this._config.doorbellSoundSettings) {
 
-                    if(item){
+                    if (item) {
                         settings = settings.concat('1');
                     } else {
                         settings = settings.concat('0');
                     }
                 }
 
-                const settingsInt = parseInt(settings, 2);
-                console.log(settings);
-                console.log(settingsInt);
 
-                res.openerAdvancedConfig.doorbellSuppression = settingsInt;
+
+                res.openerAdvancedConfig.doorbellSuppression = parseInt(settings, 2);;
                 return res.openerAdvancedConfig;
             }).then((res) => {
                 console.log('current config before change: ');
-                console.log(res);
                 this._nukiWebApi.setAdvancedConfig(this._webId, res).then((res) => {
 
                     callback(null);
@@ -410,7 +432,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             this._log.debug('DING DONG!');
             this.bellRingOn = true;
             setTimeout(() => {
-                if (!this._doorRingSignalService ) {
+                if (!this._doorRingSignalService) {
                     return;
                 }
                 this._doorRingSignalService.setCharacteristic(
@@ -493,4 +515,12 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         return parseInt(deviceTypString.concat(nukiWebId), 16);
     }
 
+    private diffSeconds(date1: Date, date2: Date | null): number {
+
+        if(!date2){
+            return 10000;
+        }
+        const diff = (date1.getTime() - date2.getTime()) / 1000;
+        return Math.abs(Math.round(diff));
+    }
 }
