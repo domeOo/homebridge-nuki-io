@@ -1,16 +1,16 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "Nuki Homebridge",
-  "name": "homebridge-nuki-io",
+  "name": "homebridge-nuki-io-bf",
   "version": "1.0.1-beta.0",
   "description": "Homebridge Plugin for Nuki Smart Lock V2 and Opener.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "git://github.com/efuturetoday/homebridge-nuki-io"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/efuturetoday/homebridge-nuki-io/issues"
   },
   "engines": {
     "node": ">=10.17.0",
