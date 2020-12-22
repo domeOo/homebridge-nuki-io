@@ -7,6 +7,12 @@
   "schema": {
     "type": "object",
     "properties": {
+      "autoConfig": {
+        "title": "Autoconfigure",
+        "type": "boolean",
+        "required": true,
+        "description": "If selected the Plugin searches for bridges and adds all devices. U need to touch the Bridge button in Parring process"
+      },
       "callbackServer": {
         "required": false,
         "type": "object",
@@ -129,7 +135,12 @@
               "description": "Expose a Contactsensor that react ons Doorbell Ring while not in RTO or Continuous Mode",
               "type": "boolean"
             },
-            "doorbellMuteService": {
+            "openerSoundService": {
+              "title": "Mute / Unmute Opener Ring Switch",
+              "description": "Expose a Switch to Mute / Unmute Opener Sound Switch over the Nuki Web Api. Needs an WebApi Access Token",
+              "type": "boolean"
+            },
+            "doorbellSoundService": {
               "title": "Mute / Unmute Doorbell Ring Switch",
               "description": "Expose a Switch to Mute / Unmute Doorbell Ring Switch over the Nuki Web Api. Needs an WebApi Access Token",
               "type": "boolean"
@@ -139,7 +150,7 @@
               "type": "string",
               "description": "Needed for Doorbell Mute button",
               "condition": {
-                "functionBody": "return model.openers[arrayIndices].doorbellMuteService === true;"
+                "functionBody": "return model.openers[arrayIndices].doorbellSoundService === true || model.openers[arrayIndices].openerSoundService ;"
               }
             }
           }

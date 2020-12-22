@@ -4,7 +4,8 @@ export interface NukiOpenerConfig {
     rtoSwitchService: boolean;
     continuousModeSwitchService: boolean;
     doorbellService: boolean;
-    doorbellMuteService: boolean;
+    openerSoundService: boolean;
+    doorbellSoundService: boolean;
     webApiToken: string
 }
 
@@ -14,6 +15,7 @@ export const NUKI_OPENER_DEFAULT_CONFIG: NukiOpenerConfig = {
     rtoSwitchService: false,
     continuousModeSwitchService: false,
     doorbellService: false,
-    doorbellMuteService: false,
+    openerSoundService: false,
+    doorbellSoundService: false,
     webApiToken: ''
 };

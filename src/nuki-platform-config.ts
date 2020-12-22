@@ -18,4 +18,5 @@ export interface NukiPlatformConfig {
         port: number;
     };
     hashToken: boolean;
+    autoConfig: boolean;
 }

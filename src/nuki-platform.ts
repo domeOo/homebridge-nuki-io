@@ -13,7 +13,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
 
     private readonly log: Logging;
 
-    private config: NukiPlatformConfig;
+    private readonly config: NukiPlatformConfig;
 
     private readonly api: API;
 
@@ -230,6 +230,7 @@ export class NukiPlatform implements DynamicPlatformPlugin {
             smartLocks: [],
             openers: [],
             hashToken: true,
+            autoConfig: false,
         };
     }
 }

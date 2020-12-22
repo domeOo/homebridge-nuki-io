@@ -20,7 +20,9 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
     private readonly _continuousModeSwitchService: Service | undefined;
 
-    private readonly _OpenerRingSoundSwitchService: Service | undefined;
+    private readonly _openerRingSoundSwitchService: Service | undefined;
+
+    private readonly _doorbellSuppressionSwitchService: Service | undefined;
 
     private readonly _characteristic: any;
 
@@ -82,11 +84,19 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             }
         }
 
-        if (this._config.doorbellMuteService) {
-            this._OpenerRingSoundSwitchService = this.getOrAddService(api.hap.Service.Switch, 'Opener Sound', 'openerSound');
+        if (this._config.openerSoundService) {
+            this._openerRingSoundSwitchService = this.getOrAddService(api.hap.Service.Switch, 'Opener Sound', 'openerSound');
         } else {
-            if (this._OpenerRingSoundSwitchService) {
-                accessory.removeService(this._OpenerRingSoundSwitchService);
+            if (this._openerRingSoundSwitchService) {
+                accessory.removeService(this._openerRingSoundSwitchService);
+            }
+        }
+
+        if (this._config.doorbellSoundService) {
+            this._doorbellSuppressionSwitchService = this.getOrAddService(api.hap.Service.Switch, 'Doorbell Sound', 'doorbellSound');
+        } else {
+            if (this._doorbellSuppressionSwitchService) {
+                accessory.removeService(this._doorbellSuppressionSwitchService);
             }
         }
 
@@ -103,7 +113,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
                 this.handleRtoSwitchServiceSet.bind(this));
         }
 
-        // Subscribes for changes of the continuous mode
+
         if (this._continuousModeSwitchService) {
             this._continuousModeSwitchService.getCharacteristic(
                 this._characteristic.On).on('set',
@@ -111,11 +121,18 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             );
         }
 
-        // Subscribes for changes of the RTO mode
-        if (this._OpenerRingSoundSwitchService) {
-            this._OpenerRingSoundSwitchService.getCharacteristic(this._characteristic.On)
+
+        if (this._openerRingSoundSwitchService) {
+            this._openerRingSoundSwitchService.getCharacteristic(this._characteristic.On)
                 .on('set', this.handleOpenerSoundSwitchServiceSet.bind(this))
                 .on('get', this.handleOpenerSoundSwitchServiceGet.bind(this));
+        }
+
+
+        if (this._doorbellSuppressionSwitchService) {
+            this._doorbellSuppressionSwitchService.getCharacteristic(this._characteristic.On)
+                .on('set', this.handleDoorbellSuppressionSwitchServiceSet.bind(this))
+                .on('get', this.handleDoorbellSuppressionSwitchServiceGet.bind(this));
         }
 
         this._informationService
@@ -218,9 +235,10 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
     handleOpenerSoundSwitchServiceGet(callback: CharacteristicSetCallback) {
 
-        this._nukiWebApi.getSmartlock(9095747418).then((res) => {
-            res = res.openerAdvancedConfig.soundLevel;
-            return res;
+        this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+            console.log(res);
+            return res.openerAdvancedConfig.soundLevel;
+
         }).then((res) => {
             console.log('result get: ' + res);
             let result = false;
@@ -240,7 +258,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         if (value) {
 
             this._nukiWebApi.getSmartlock(this._webId).then((res) => {
-                res.openerAdvancedConfig.soundLevel = 0;
+                res.openerAdvancedConfig.soundLevel = 255;
                 res = res.openerAdvancedConfig;
                 return res;
             }).then((res) => {
@@ -250,12 +268,18 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
                     callback(null);
                 }).then(() => {
-                    this._nukiWebApi.getSmartlock(this._webId).then((res) => {
-                        this._log.debug('config after change');
-                        console.log(res.openerAdvancedConfig);
+
+                    setTimeout(() => {
+                        this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+                            this._log.debug('config after change');
+                            console.log(res.openerAdvancedConfig);
 
 
-                    });
+                        });
+
+
+                    }, 500)
+
                 }).catch((e) => {
                     console.error('getSmartlock(smartlockId): ' + e.message);
                     callback(e);
@@ -264,7 +288,78 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             });
         } else {
             this._nukiWebApi.getSmartlock(this._webId).then((res) => {
-                res.openerAdvancedConfig.soundLevel = 255;
+                res.openerAdvancedConfig.soundLevel = 0;
+                res = res.openerAdvancedConfig;
+                return res;
+            }).then((res) => {
+                console.log('result before: ');
+                console.log(res);
+                this._nukiWebApi.setAdvancedConfig(this._webId, res).then((res) => {
+                    callback(null);
+                });
+            }).catch((e) => {
+                console.error('getSmartlock(smartlockId): ' + e.message);
+                callback(e);
+            });
+        }
+    }
+
+    handleDoorbellSuppressionSwitchServiceGet(callback: CharacteristicSetCallback) {
+
+        this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+            console.log(res);
+            return res.openerAdvancedConfig.doorbellSuppression;
+
+        }).then((res) => {
+            console.log('result get: ' + res);
+            let result = false;
+            if (res !== 7) {
+                result = true;
+
+            }
+            callback(null, result);
+        }).catch((e) => {
+            console.error('getSmartlock(smartlockId): ' + e.message);
+            callback(e, undefined);
+        });
+    }
+
+    handleDoorbellSuppressionSwitchServiceSet(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+        this._log.debug('Opener Doorbell on: ' + value);
+        if (value) {
+
+            this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+                res.openerAdvancedConfig.doorbellSuppression = 3;
+                res = res.openerAdvancedConfig;
+                return res;
+            }).then((res) => {
+                console.log('current config before change: ');
+                console.log(res);
+                this._nukiWebApi.setAdvancedConfig(this._webId, res).then((res) => {
+
+                    callback(null);
+                }).then(() => {
+
+                    setTimeout(() => {
+                        this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+                            this._log.debug('config after change');
+                            console.log(res.openerAdvancedConfig);
+
+
+                        });
+
+
+                    }, 500)
+
+                }).catch((e) => {
+                    console.error('getSmartlock(smartlockId): ' + e.message);
+                    callback(e);
+                });
+
+            });
+        } else {
+            this._nukiWebApi.getSmartlock(this._webId).then((res) => {
+                res.openerAdvancedConfig.doorbellSuppression = 7;
                 res = res.openerAdvancedConfig;
                 return res;
             }).then((res) => {
