@@ -2,7 +2,7 @@
   "private": true,
   "displayName": "Nuki Homebridge",
   "name": "homebridge-nuki-io",
-  "version": "1.0.0",
+  "version": "1.0.1-beta.0",
   "description": "Homebridge Plugin for Nuki Smart Lock V2 and Opener.",
   "license": "Apache-2.0",
   "repository": {
