@@ -145,12 +145,34 @@
               "description": "Expose a Switch to Mute / Unmute Doorbell Ring Switch over the Nuki Web Api. Needs an WebApi Access Token",
               "type": "boolean"
             },
+            "doorbellSoundSettings": {
+              "title": "Doorbell Ring settings",
+              "description": "Ring settings for Doorbell Ring is is turned On",
+              "condition": {
+                "functionBody": "return  model.openers[arrayIndices].doorbellSoundService === true ;"
+              },
+              "type": "array",
+              "items": [
+                {
+                  "title": "Ring",
+                  "type": "boolean"
+                },
+                {
+                  "title": "RTO",
+                  "type": "boolean"
+                },
+                {
+                  "title": "CM",
+                  "type": "boolean"
+                }
+              ]
+            },
             "webApiToken": {
               "title": "WebApi Token",
               "type": "string",
               "description": "Needed for Doorbell Mute button",
               "condition": {
-                "functionBody": "return model.openers[arrayIndices].doorbellSoundService === true || model.openers[arrayIndices].openerSoundService ;"
+                "functionBody": "return model.openers[arrayIndices].doorbellSoundService  ||  model.openers[arrayIndices].openerSoundService ;"
               }
             }
           }

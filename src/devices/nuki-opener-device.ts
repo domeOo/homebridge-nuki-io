@@ -5,7 +5,6 @@ import { NukiDeviceTypes } from '../api/nuki-device-types';
 import { NukiDeviceState } from '../api/nuki-device-state';
 import { NukiOpenerAction } from '../api/nuki-opener-action';
 import { NukiOpenerState } from '../api/nuki-opener-state';
-import { NukiWebApi } from '../api/nuki-web-api';
 import { NukiOpenerMode } from '../api/nuki-opener-mode';
 import { NukiOpenerConfig } from './nuki-opener-config';
 
@@ -158,7 +157,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         }
 
         if (lastKnownState.state === NukiOpenerState.OPEN) {
-            this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED becaus of open');
+            this._log(this.id + ' - Updating lock state: UNSECURED/UNSECURED because of open');
             this._lockService.updateCharacteristic(
                 this._characteristic.LockCurrentState,
                 this._characteristic.LockCurrentState.UNSECURED,
@@ -329,9 +328,23 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         if (value) {
 
             this._nukiWebApi.getSmartlock(this._webId).then((res) => {
-                res.openerAdvancedConfig.doorbellSuppression = 3;
-                res = res.openerAdvancedConfig;
-                return res;
+
+                let settings = '';
+                for (const item of this._config.doorbellSoundSettings) {
+
+                    if(item){
+                        settings = settings.concat('1');
+                    } else {
+                        settings = settings.concat('0');
+                    }
+                }
+
+                const settingsInt = parseInt(settings, 2);
+                console.log(settings);
+                console.log(settingsInt);
+
+                res.openerAdvancedConfig.doorbellSuppression = settingsInt;
+                return res.openerAdvancedConfig;
             }).then((res) => {
                 console.log('current config before change: ');
                 console.log(res);
@@ -344,11 +357,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
                         this._nukiWebApi.getSmartlock(this._webId).then((res) => {
                             this._log.debug('config after change');
                             console.log(res.openerAdvancedConfig);
-
-
                         });
-
-
                     }, 500)
 
                 }).catch((e) => {
