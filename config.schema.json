@@ -92,6 +92,12 @@
               "type": "boolean",
               "required": true
             },
+            "secureLockService": {
+              "title": "Secure Lock Service?",
+              "description": "Will expose the Lock-Service as Lock. Can't be used in Automations without confirmation.",
+              "type": "boolean",
+              "required": true
+            },
             "unlatchWhenLocked": {
               "title": "Unlatch When Locked?",
               "description": "When enabled the Door can be unlatched even the Door is locked.",
@@ -139,6 +145,19 @@
               "title": "Mute / Unmute Opener Ring Switch",
               "description": "Expose a Switch to Mute / Unmute Opener Sound Switch over the Nuki Web Api. Needs an WebApi Access Token",
               "type": "boolean"
+            },
+            "deactivateRtoAfterFirstRing": {
+              "title": "Deactivate RTO after first Ring",
+              "description": "If set to true RTO will be deactivated after first Ring. Important if u want to use Doorbell Service because with the native option we can't recognize the difference between normal ring and rto ring",
+              "type": "boolean"
+            },
+            "deactivateRtoAfterFirstRingTimeout": {
+              "title": "Deactivate RTO after first Ring",
+              "description": "The Time its takes for RTO to deactivate after first Ring min 5s",
+              "type": "number",
+              "condition": {
+                "functionBody": "return  model.openers[arrayIndices].deactivateRtoAfterFirstRing === true ;"
+              }
             },
             "doorbellSoundService": {
               "title": "Mute / Unmute Doorbell Ring Switch",
