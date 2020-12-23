@@ -7,7 +7,9 @@ export interface NukiOpenerConfig {
     openerSoundService: boolean;
     doorbellSoundService: boolean;
     doorbellSoundSettings: Array<boolean>;
-    webApiToken: string
+    webApiToken: string;
+    deactivateRtoAfterFirstRing: boolean;
+    deactivateRtoAfterFirstRingTimeout: number;
 }
 
 export const NUKI_OPENER_DEFAULT_CONFIG: NukiOpenerConfig = {
@@ -19,5 +21,7 @@ export const NUKI_OPENER_DEFAULT_CONFIG: NukiOpenerConfig = {
     openerSoundService: false,
     doorbellSoundService: false,
     doorbellSoundSettings: [true, true, true],
-    webApiToken: ''
+    webApiToken: '',
+    deactivateRtoAfterFirstRing: false,
+    deactivateRtoAfterFirstRingTimeout: 5,
 };
