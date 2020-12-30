@@ -140,6 +140,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
     update(lastKnownBridgeState: NukiDeviceState) {
 
+        this._log.debug('lastKnownState opener: ', lastKnownBridgeState);
         // Checks if the state exists, which is not the case if the device is unavailable
         if (!lastKnownBridgeState) {
             return;
