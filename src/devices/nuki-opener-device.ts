@@ -175,28 +175,18 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
             );
         }
 
-        // Sets the ring action state //todo: check if ring to action is deacivated after ring and
+        // Sets the ring action state //
         if (this._doorRingSignalService && lastKnownBridgeState.ringactionState
-            && lastKnownBridgeState.state === NukiOpenerState.ONLINE
             && lastKnownBridgeState.mode !== NukiOpenerMode.CONTINUOUS_MODE) {
 
-            this._log.debug('Opener with id: ' + this.id + ' - Updating doorbell: Ring');
-            this._doorRingSignalService.setCharacteristic(
-                this._characteristic.ContactSensorState,
-                this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED,
-            );
-
-            if (this._config.deactivateRtoAfterFirstRing) {
-                setTimeout(() => {
-                    this._nukiApi.lockAction(
-                        this.id, NukiDeviceTypes.Opener,
-                        NukiOpenerAction.DEACTIVATE_RTO).then(() => {
-                        this._log.debug(' Opener - Set RTO off after first Ring ');
-                    }).catch((err) => {
-                        this._log.error(err);
-                    });
-                }, this._config.deactivateRtoAfterFirstRingTimeout * 1000);
+            if( lastKnownBridgeState.state === NukiOpenerState.ONLINE){
+                this._log.debug('Opener with id: ' + this.id + ' - Updating doorbell: Ring');
+                this._doorRingSignalService.setCharacteristic(
+                    this._characteristic.ContactSensorState,
+                    this._characteristic.ContactSensorState.CONTACT_NOT_DETECTED,
+                );
             }
+            this.deactivateRTOAfterTimeout();
         }
 
         // Sets the status for the continuous mode
@@ -289,7 +279,7 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
                         });
 
 
-                    }, 500)
+                    }, 500);
 
                 }).catch((e) => {
                     console.error('getSmartlock(smartlockId): ' + e.message);
@@ -353,7 +343,6 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
 
 
                 res.openerAdvancedConfig.doorbellSuppression = parseInt(settings, 2);
-                ;
                 return res.openerAdvancedConfig;
             }).then((res) => {
                 console.log('current config before change: ');
@@ -502,12 +491,15 @@ export class NukiOpenerDevice extends AbstractNukIDevice {
         return parseInt(deviceTypString.concat(nukiWebId), 16);
     }
 
-    private diffSeconds(date1: Date, date2: Date | null): number {
-
-        if (!date2) {
-            return 10000;
-        }
-        const diff = (date1.getTime() - date2.getTime()) / 1000;
-        return Math.abs(Math.round(diff));
+    private deactivateRTOAfterTimeout() {
+        setTimeout(() => {
+            this._nukiApi.lockAction(
+                this.id, NukiDeviceTypes.Opener,
+                NukiOpenerAction.DEACTIVATE_RTO).then(() => {
+                this._log.debug(' Opener - Set RTO off after first Ring ');
+            }).catch((err) => {
+                this._log.error(err);
+            });
+        }, this._config.deactivateRtoAfterFirstRingTimeout * 1000);
     }
 }
