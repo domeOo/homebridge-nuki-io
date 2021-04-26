@@ -63,7 +63,7 @@ export class NukiWebApi {
     async muteOpenerRingSound(nukiId: string, andvancedCondig: JSON) {
         ///smartlock/{smartlockId}/advanced/openerconfig
         const id = 9095747418;
-        const url = this.getUrl([`smartlock/${id}/advanced/openerconfig`]);
+        const url = this.getUrl([`smartlock/${ this.calculateWebId(nukiId,NukiDeviceTypes.Opener)}/advanced/openerconfig`]);
         console.log('url: ' + url);
         console.log( JSON.stringify(andvancedCondig));
         const response = await postJSON(url, JSON.stringify(andvancedCondig));
